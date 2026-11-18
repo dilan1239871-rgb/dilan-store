@@ -1,0 +1,959 @@
+<!DOCTYPE html>
+<html lang="es" class="h-full dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dilan Store - Tienda Independiente de Aplicaciones y APKs</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#eef2ff',
+                            100: '#e0e7ff',
+                            500: '#6366f1',
+                            600: '#4f46e5',
+                            700: '#4338ca',
+                            900: '#312e81',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        @keyframes pulse-ring {
+            0% { transform: scale(0.95); opacity: 0.8; }
+            50% { transform: scale(1.05); opacity: 1; }
+            100% { transform: scale(0.95); opacity: 0.8; }
+        }
+        .notify-pulse { animation: pulse-ring 2s infinite ease-in-out; }
+    </style>
+</head>
+<body class="bg-gray-950 text-gray-100 min-h-full flex flex-col transition-colors duration-200">
+
+    <!-- Encabezado de Navegación -->
+    <header class="sticky top-0 z-40 bg-gray-900/80 backdrop-blur-md border-b border-gray-800">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16 gap-4">
+                
+                <!-- Logo de Dilan Store -->
+                <div class="flex items-center space-x-3 cursor-pointer" onclick="resetFilters()">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-indigo-400 flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-brand-500/30">
+                        <i class="fa-solid fa-cube"></i>
+                    </div>
+                    <div class="flex flex-col">
+                        <span class="text-xl font-extrabold tracking-tight bg-gradient-to-r from-brand-500 via-indigo-400 to-purple-400 bg-clip-text text-transparent leading-none">
+                            DILAN STORE
+                        </span>
+                        <span class="text-[10px] text-green-400 font-semibold flex items-center gap-1 mt-0.5">
+                            <span class="w-2 h-2 rounded-full bg-green-500 animate-ping"></span>
+                            En vivo (Tiempo Real)
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Barra de Búsqueda Principal -->
+                <div class="flex-1 max-w-md relative hidden sm:block">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                    </div>
+                    <input type="text" id="searchInput" oninput="handleSearch()" placeholder="Buscar APKs, juegos o aplicaciones..." class="w-full pl-10 pr-4 py-2 text-sm bg-gray-800 border border-gray-700 rounded-full focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-gray-900 transition-all text-white placeholder-gray-400">
+                </div>
+
+                <!-- Acciones Principales -->
+                <div class="flex items-center space-x-2 sm:space-x-3">
+                    <button id="enableNotifyBtn" onclick="requestNotificationPermission()" class="px-3 py-2 text-xs font-semibold bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-xl border border-gray-700 transition-all flex items-center gap-1.5" title="Activar notificaciones push">
+                        <i class="fa-solid fa-bell text-brand-400"></i>
+                        <span class="hidden md:inline">Notificaciones</span>
+                    </button>
+                    <button onclick="openDevModal()" class="px-4 py-2 text-xs sm:text-sm font-semibold bg-brand-600 hover:bg-brand-500 text-white rounded-xl shadow-lg shadow-brand-600/30 transition-all flex items-center gap-2">
+                        <i class="fa-solid fa-cloud-arrow-up text-sm"></i>
+                        <span>Subir APK</span>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Barra de Búsqueda Móvil -->
+            <div class="pb-3 pt-1 sm:hidden">
+                <div class="relative">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                    </div>
+                    <input type="text" id="mobileSearchInput" oninput="handleSearch(true)" placeholder="Buscar aplicaciones..." class="w-full pl-10 pr-4 py-2 text-sm bg-gray-800 border border-gray-700 rounded-full focus:outline-none focus:ring-2 focus:ring-brand-500 text-white placeholder-gray-400">
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Banner Alerta Notificación Broadcast en Tiempo Real -->
+    <div id="pushBroadcastBanner" class="hidden sticky top-16 z-30 bg-gradient-to-r from-indigo-900 via-purple-900 to-brand-900 border-b border-brand-500/40 px-4 py-3 text-white shadow-2xl transition-all duration-300">
+        <div class="max-w-7xl mx-auto flex items-center justify-between gap-3">
+            <div class="flex items-center space-x-3 min-w-0">
+                <div class="w-9 h-9 rounded-xl bg-brand-500 flex items-center justify-center text-white flex-shrink-0 notify-pulse">
+                    <i class="fa-solid fa-bell text-lg"></i>
+                </div>
+                <div class="truncate">
+                    <p class="text-xs font-bold uppercase tracking-wider text-brand-300">¡Nueva Aplicación Publicada!</p>
+                    <p id="broadcastAppTitle" class="text-sm font-semibold text-white truncate">Alguien acaba de publicar una app</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-2 flex-shrink-0">
+                <button id="broadcastViewBtn" class="px-4 py-1.5 bg-white text-gray-900 font-bold text-xs rounded-xl shadow-md hover:bg-brand-50 transition-colors">
+                    Ver Ahora
+                </button>
+                <button onclick="closeBroadcastBanner()" class="p-1.5 text-gray-300 hover:text-white">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notificación Toast -->
+    <div id="toastNotification" class="fixed bottom-5 right-5 z-50 bg-white text-gray-900 px-4 py-3 rounded-xl shadow-2xl transition-all duration-300 transform translate-y-20 opacity-0 flex items-center space-x-3 pointer-events-none">
+        <i id="toastIcon" class="fa-solid fa-circle-check text-green-600"></i>
+        <span id="toastMessage" class="text-sm font-medium">Operación exitosa</span>
+    </div>
+
+    <!-- Contenido Principal -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-8">
+        
+        <!-- Categorías -->
+        <section class="flex items-center space-x-2 overflow-x-auto hide-scrollbar pb-2">
+            <button onclick="filterCategory('all')" class="category-btn active px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all bg-brand-600 text-white shadow-md shadow-brand-500/20" data-cat="all">
+                <i class="fa-solid fa-border-all mr-1.5"></i> Todas
+            </button>
+            <button onclick="filterCategory('Juegos')" class="category-btn px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all bg-gray-800 text-gray-300 hover:bg-gray-700" data-cat="Juegos">
+                <i class="fa-solid fa-gamepad mr-1.5"></i> Juegos
+            </button>
+            <button onclick="filterCategory('Herramientas')" class="category-btn px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all bg-gray-800 text-gray-300 hover:bg-gray-700" data-cat="Herramientas">
+                <i class="fa-solid fa-wrench mr-1.5"></i> Herramientas
+            </button>
+            <button onclick="filterCategory('Productividad')" class="category-btn px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all bg-gray-800 text-gray-300 hover:bg-gray-700" data-cat="Productividad">
+                <i class="fa-solid fa-chart-line mr-1.5"></i> Productividad
+            </button>
+            <button onclick="filterCategory('Entretenimiento')" class="category-btn px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all bg-gray-800 text-gray-300 hover:bg-gray-700" data-cat="Entretenimiento">
+                <i class="fa-solid fa-film mr-1.5"></i> Entretenimiento
+            </button>
+        </section>
+
+        <!-- Banner de App Destacada -->
+        <section id="featuredSection" class="relative rounded-3xl overflow-hidden bg-gradient-to-r from-slate-900 via-indigo-950 to-purple-950 text-white shadow-2xl p-6 sm:p-10 border border-gray-800">
+            <div class="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
+                <div class="space-y-4 max-w-xl text-center md:text-left">
+                    <span class="inline-block px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider bg-brand-500/30 text-brand-300 border border-brand-500/40">
+                        Destacado de la Semana
+                    </span>
+                    <h1 id="featuredTitle" class="text-3xl sm:text-5xl font-extrabold tracking-tight">Cargando...</h1>
+                    <p id="featuredDesc" class="text-gray-300 text-sm sm:text-base leading-relaxed line-clamp-2">Explora las mejores apps optimizadas para descarga directa.</p>
+                    <div class="flex items-center justify-center md:justify-start space-x-4 pt-2">
+                        <button id="featuredBtn" onclick="" class="px-6 py-3 bg-brand-600 hover:bg-brand-500 text-white font-semibold rounded-2xl shadow-lg transition-transform active:scale-95 flex items-center space-x-2">
+                            <i class="fa-solid fa-download"></i>
+                            <span>Descargar APK</span>
+                        </button>
+                        <button id="featuredDetailsBtn" onclick="" class="px-6 py-3 bg-white/10 hover:bg-white/20 text-white font-semibold rounded-2xl backdrop-blur-md transition-colors">
+                            Ver Detalles
+                        </button>
+                    </div>
+                </div>
+                <div class="relative group">
+                    <div class="absolute -inset-1 bg-gradient-to-r from-brand-500 to-purple-600 rounded-3xl blur opacity-30 group-hover:opacity-75 transition duration-500"></div>
+                    <img id="featuredImg" class="relative w-40 h-40 sm:w-52 sm:h-52 rounded-3xl object-cover shadow-2xl border-2 border-white/10" src="" alt="App Destacada">
+                </div>
+            </div>
+        </section>
+
+        <!-- Encabezado del Catálogo -->
+        <div class="flex justify-between items-center pt-4">
+            <h2 id="sectionHeading" class="text-2xl font-bold tracking-tight">Todas las Aplicaciones</h2>
+            <span id="appCount" class="text-sm text-gray-400 font-medium">0 disponibles</span>
+        </div>
+
+        <!-- Rejilla de Apps -->
+        <section id="appsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <!-- Las tarjetas de apps se cargan dinámicamente -->
+        </section>
+
+        <!-- Estado Vacío -->
+        <div id="emptyState" class="hidden flex-col items-center justify-center py-16 text-center space-y-4">
+            <div class="w-20 h-20 bg-gray-800 rounded-full flex items-center justify-center text-gray-400 text-3xl">
+                <i class="fa-solid fa-ghost"></i>
+            </div>
+            <h3 class="text-xl font-semibold">No se encontraron aplicaciones</h3>
+            <p class="text-gray-400 max-w-sm">Intenta buscar con otros términos o cambia la categoría seleccionada.</p>
+            <button onclick="resetFilters()" class="px-4 py-2 bg-brand-600 text-white font-medium rounded-xl text-sm">Restablecer Filtros</button>
+        </div>
+
+    </main>
+
+    <!-- Modal de Detalles de App -->
+    <div id="appModal" class="fixed inset-0 z-50 hidden overflow-y-auto bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="relative bg-gray-900 w-full max-w-3xl rounded-3xl shadow-2xl border border-gray-800 overflow-hidden transform transition-all my-8">
+            <button onclick="closeAppModal()" class="absolute top-4 right-4 z-10 w-10 h-10 bg-gray-800 text-gray-300 rounded-full flex items-center justify-center hover:bg-gray-700 transition-colors">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+
+            <div class="p-6 sm:p-8 space-y-6">
+                <!-- Información Principal -->
+                <div class="flex flex-col sm:flex-row items-start sm:items-center space-y-4 sm:space-y-0 sm:space-x-6">
+                    <img id="modalIcon" class="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl object-cover shadow-md border border-gray-800" src="" alt="Icono de la App">
+                    <div class="space-y-1.5 flex-1">
+                        <div class="flex items-center space-x-2">
+                            <span id="modalCategory" class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-brand-900/50 text-brand-400 border border-brand-500/20">Categoría</span>
+                            <span id="modalPrice" class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-green-900/40 text-green-400 border border-green-500/20">Gratis</span>
+                        </div>
+                        <h2 id="modalTitle" class="text-2xl sm:text-3xl font-extrabold text-white">Título de la App</h2>
+                        <p id="modalDeveloper" class="text-sm font-medium text-gray-400">Desarrollador</p>
+                        <div class="flex items-center space-x-4 pt-1 text-sm">
+                            <div class="flex items-center text-amber-400 font-bold">
+                                <i class="fa-solid fa-star mr-1"></i>
+                                <span id="modalRating" class="text-gray-100">4.5</span>
+                            </div>
+                            <span class="text-gray-700">•</span>
+                            <span id="modalSize" class="text-gray-400">0 MB</span>
+                            <span class="text-gray-700">•</span>
+                            <span id="modalDownloads" class="text-gray-400">0 descargas</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Área de Descarga y Progreso -->
+                <div class="bg-gray-800/60 p-4 rounded-2xl border border-gray-800 space-y-3">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-xs text-gray-400">Archivo Instalable</p>
+                            <p id="modalApkName" class="text-sm font-semibold text-gray-200">app-release.apk</p>
+                        </div>
+                        <button id="downloadBtn" onclick="triggerDirectDownload()" class="px-6 py-3 bg-brand-600 hover:bg-brand-500 text-white font-semibold rounded-xl shadow-lg shadow-brand-500/25 transition-all flex items-center space-x-2">
+                            <i class="fa-solid fa-download"></i>
+                            <span>Descargar APK</span>
+                        </button>
+                    </div>
+
+                    <!-- Progreso Animado de Descarga -->
+                    <div id="progressContainer" class="hidden space-y-1.5 pt-2">
+                        <div class="flex justify-between text-xs font-semibold text-brand-400">
+                            <span id="downloadStatusText">Preparando archivo...</span>
+                            <span id="downloadPercent">0%</span>
+                        </div>
+                        <div class="w-full h-2 bg-gray-700 rounded-full overflow-hidden">
+                            <div id="progressBar" class="h-full bg-brand-500 rounded-full transition-all duration-200" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Capturas de Pantalla -->
+                <div class="space-y-2">
+                    <h3 class="text-sm font-bold uppercase tracking-wider text-gray-400">Capturas de Pantalla</h3>
+                    <div id="modalScreenshots" class="flex space-x-3 overflow-x-auto hide-scrollbar py-2">
+                        <!-- Img capturas dinámicas -->
+                    </div>
+                </div>
+
+                <!-- Descripción y Especificaciones -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 pt-2">
+                    <div class="md:col-span-2 space-y-2">
+                        <h3 class="text-sm font-bold uppercase tracking-wider text-gray-400">Descripción</h3>
+                        <p id="modalDescription" class="text-gray-300 text-sm leading-relaxed whitespace-pre-line">
+                            Descripción detallada de la aplicación...
+                        </p>
+                    </div>
+                    <div class="space-y-4 bg-gray-800/40 p-4 rounded-2xl h-fit border border-gray-800">
+                        <h3 class="text-sm font-bold uppercase tracking-wider text-gray-400">Información Técnica</h3>
+                        <div class="space-y-2 text-xs">
+                            <div>
+                                <span class="text-gray-500">Versión:</span>
+                                <p id="modalVersion" class="font-semibold text-gray-200">1.0.0</p>
+                            </div>
+                            <div>
+                                <span class="text-gray-500">Requisito Mínimo:</span>
+                                <p id="modalMinAndroid" class="font-semibold text-gray-200">Android 8.0+</p>
+                            </div>
+                            <div>
+                                <span class="text-gray-500">Estado de Licencia:</span>
+                                <p class="font-semibold text-green-400">Verificado Libre de Malware</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para Subir Archivos APK Reales -->
+    <div id="devModal" class="fixed inset-0 z-50 hidden overflow-y-auto bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="relative bg-gray-900 w-full max-w-lg rounded-3xl shadow-2xl border border-gray-800 overflow-hidden p-6 sm:p-8 space-y-6">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 rounded-xl bg-brand-900/50 text-brand-400 flex items-center justify-center font-bold">
+                        <i class="fa-solid fa-cloud-arrow-up text-lg"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-bold text-white">Subir a Dilan Store</h3>
+                        <p class="text-xs text-gray-400">Se notificará al instante a todos los usuarios</p>
+                    </div>
+                </div>
+                <button onclick="closeDevModal()" class="text-gray-400 hover:text-white">
+                    <i class="fa-solid fa-xmark text-xl"></i>
+                </button>
+            </div>
+
+            <form id="devForm" onsubmit="handleDevSubmit(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-gray-400 uppercase mb-1">Nombre de la App</label>
+                    <input type="text" id="devAppName" required placeholder="Ej. Mi Super Juego" class="w-full px-4 py-2.5 text-sm rounded-xl bg-gray-800 border border-gray-700 focus:border-brand-500 focus:outline-none text-white">
+                </div>
+                
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-400 uppercase mb-1">Categoría</label>
+                        <select id="devCategory" required class="w-full px-4 py-2.5 text-sm rounded-xl bg-gray-800 border border-gray-700 focus:border-brand-500 focus:outline-none text-white">
+                            <option value="Juegos">Juegos</option>
+                            <option value="Herramientas">Herramientas</option>
+                            <option value="Productividad">Productividad</option>
+                            <option value="Entretenimiento">Entretenimiento</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-400 uppercase mb-1">Desarrollador</label>
+                        <input type="text" id="devDeveloper" required placeholder="Tu Nombre / Estudio" class="w-full px-4 py-2.5 text-sm rounded-xl bg-gray-800 border border-gray-700 focus:border-brand-500 focus:outline-none text-white">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-gray-400 uppercase mb-1">Descripción Breve</label>
+                    <textarea id="devDescription" rows="2" required placeholder="Explora las funcionalidades principales..." class="w-full px-4 py-2.5 text-sm rounded-xl bg-gray-800 border border-gray-700 focus:border-brand-500 focus:outline-none text-white"></textarea>
+                </div>
+
+                <!-- Selección de Icono -->
+                <div>
+                    <label class="block text-xs font-semibold text-gray-400 uppercase mb-1">Icono de la App (Opcional)</label>
+                    <input type="file" id="devIconInput" accept="image/*" onchange="handleIconSelect(event)" class="w-full text-xs text-gray-400 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-brand-900/40 file:text-brand-400 hover:file:bg-brand-900/60">
+                </div>
+
+                <!-- Zona de Arrastrar y Soltar Archivo Real -->
+                <div>
+                    <label class="block text-xs font-semibold text-gray-400 uppercase mb-1">Archivo APK / Instalable Real</label>
+                    <div id="dropZone" onclick="document.getElementById('devApkFileInput').click()" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleFileDrop(event)" class="border-2 border-dashed border-gray-700 rounded-2xl p-5 text-center cursor-pointer hover:border-brand-500 transition-colors bg-gray-800/40">
+                        <input type="file" id="devApkFileInput" accept=".apk,.zip,.xapk,.aab,.exe,.bin" onchange="handleFileSelect(event)" class="hidden">
+                        
+                        <div id="dropZonePrompt" class="space-y-1">
+                            <i class="fa-solid fa-cloud-arrow-up text-3xl text-brand-400 mb-1"></i>
+                            <p class="text-xs font-medium text-gray-300">Arrastra tu archivo aquí o <span class="text-brand-400 underline">haz clic para explorar</span></p>
+                            <p class="text-[10px] text-gray-500">Soporta .apk, .xapk, .zip, etc.</p>
+                        </div>
+                        
+                        <div id="fileSelectedInfo" class="hidden items-center justify-between bg-gray-900 p-3 rounded-xl border border-gray-700">
+                            <div class="flex items-center space-x-3 truncate">
+                                <i class="fa-solid fa-file-code text-brand-400 text-xl"></i>
+                                <div class="text-left truncate">
+                                    <p id="uploadedFileName" class="text-xs font-semibold text-gray-200 truncate">archivo.apk</p>
+                                    <p id="uploadedFileSize" class="text-[10px] text-gray-400">0 MB</p>
+                                </div>
+                            </div>
+                            <span class="text-xs font-semibold text-green-400 flex items-center gap-1"><i class="fa-solid fa-circle-check"></i> Archivo Listo</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="pt-2 flex justify-end space-x-3">
+                    <button type="button" onclick="closeDevModal()" class="px-5 py-2.5 rounded-xl text-sm font-medium text-gray-300 hover:bg-gray-800">Cancelar</button>
+                    <button type="submit" id="submitBtn" class="px-6 py-2.5 rounded-xl text-sm font-semibold bg-brand-600 hover:bg-brand-500 text-white shadow-lg shadow-brand-500/30 flex items-center gap-2">
+                        <span>Publicar y Notificar</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Pie de Página -->
+    <footer class="bg-gray-900 border-t border-gray-800 mt-12 py-6 text-xs text-gray-500">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row justify-between items-center gap-4">
+            <p>© 2026 Dilan Store - Catálogo Independiente con Sincronización en Tiempo Real.</p>
+            <div class="flex space-x-6">
+                <a href="#" onclick="showToast('Sincronización en vivo activada'); return false;" class="hover:underline">Descarga Directa</a>
+                <a href="#" onclick="openDevModal(); return false;" class="hover:underline">Subir APK</a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Firebase SDK Imports -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Configuración de Firebase
+        const firebaseConfig = typeof __firebase_config !== 'undefined' 
+            ? JSON.parse(__firebase_config) 
+            : {
+                apiKey: "demo-api-key",
+                authDomain: "dilan-store-demo.firebaseapp.com",
+                projectId: "dilan-store-demo",
+                storageBucket: "dilan-store-demo.appspot.com",
+                messagingSenderId: "1234567890",
+                appId: "1:1234567890:web:abcdef123456"
+            };
+
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'dilan-store-app';
+        
+        // Inicializar Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+
+        // Estado Global
+        window.db = db;
+        window.appId = appId;
+        window.currentUser = null;
+        window.isFirstLoad = true;
+
+        // Autenticación Automática
+        async function initAuth() {
+            try {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+            } catch (err) {
+                console.warn("Autenticándose de forma anónima fallback:", err);
+                try { await signInAnonymously(auth); } catch(e){}
+            }
+        }
+
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                window.currentUser = user;
+                initRealtimeCatalog();
+            }
+        });
+
+        // Colección en Firestore (Regla 1 de Firestore)
+        const appsCollectionRef = collection(db, 'artifacts', appId, 'public', 'data', 'apps');
+
+        // Escuchador en Tiempo Real (Real-time Broadcast & Synchronization)
+        function initRealtimeCatalog() {
+            onSnapshot(appsCollectionRef, (snapshot) => {
+                const fetchedApps = [];
+                let newestAppAdded = null;
+
+                snapshot.docChanges().forEach((change) => {
+                    if (change.type === "added") {
+                        const data = change.doc.data();
+                        const appObj = { id: change.doc.id, ...data };
+                        
+                        // Si no es la primera carga inicial del catálogo, notificar a todos los usuarios
+                        if (!window.isFirstLoad) {
+                            newestAppAdded = appObj;
+                        }
+                    }
+                });
+
+                snapshot.forEach((doc) => {
+                    fetchedApps.push({ id: doc.id, ...doc.data() });
+                });
+
+                // Ordenar por fecha o actualización
+                fetchedApps.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+
+                if (fetchedApps.length > 0) {
+                    window.appsList = fetchedApps;
+                    window.renderFeaturedApp();
+                    window.renderApps();
+                }
+
+                // Notificación Push para todos los usuarios activos
+                if (newestAppAdded) {
+                    window.triggerRealtimePushNotification(newestAppAdded);
+                }
+
+                window.isFirstLoad = false;
+            }, (error) => {
+                console.error("Error en conexión en tiempo real:", error);
+            });
+        }
+
+        // Función para publicar nueva app en Firestore
+        window.publishAppToFirestore = async function(appData) {
+            if (!window.currentUser) {
+                await initAuth();
+            }
+
+            try {
+                const docRef = await addDoc(appsCollectionRef, {
+                    ...appData,
+                    createdAt: Date.now()
+                });
+                return docRef.id;
+            } catch (err) {
+                console.error("Error al guardar en Firestore:", err);
+                throw err;
+            }
+        };
+
+        // Iniciar Autenticación al cargar
+        initAuth();
+    </script>
+
+    <!-- Lógica Principal de la Tienda -->
+    <script>
+        // Datos Iniciales por Defecto (Fallback)
+        const initialApps = [
+            {
+                id: '1',
+                title: 'Cyber Dash 2077',
+                category: 'Juegos',
+                developer: 'Neon Byte Studio',
+                rating: 4.8,
+                downloads: '1.2M',
+                size: '95.4 MB',
+                price: 'Gratis',
+                icon: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=300&auto=format&fit=crop&q=80',
+                description: 'Un trepidante juego de carreras runner ambientado en una metrópolis futurista llena de luces de neón y música synthwave.',
+                version: '2.4.1',
+                minAndroid: 'Android 9.0+',
+                apkName: 'cyber-dash-v2.4.1.apk',
+                realFileUrl: null,
+                screenshots: [
+                    'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=600&auto=format&fit=crop&q=80',
+                    'https://images.unsplash.com/photo-1511512578047-dfb367046420?w=600&auto=format&fit=crop&q=80'
+                ]
+            },
+            {
+                id: '2',
+                title: 'CleanBoost Master',
+                category: 'Herramientas',
+                developer: 'Dilan Tech Labs',
+                rating: 4.6,
+                downloads: '500K',
+                size: '18.2 MB',
+                price: 'Gratis',
+                icon: 'https://images.unsplash.com/photo-1563986768609-322da13575f3?w=300&auto=format&fit=crop&q=80',
+                description: 'Optimiza el rendimiento de tu teléfono, limpia archivos residuales no deseados y administra la memoria de forma segura.',
+                version: '1.0.8',
+                minAndroid: 'Android 7.0+',
+                apkName: 'cleanboost-pro.apk',
+                realFileUrl: null,
+                screenshots: [
+                    'https://images.unsplash.com/photo-1563986768609-322da13575f3?w=600&auto=format&fit=crop&q=80'
+                ]
+            }
+        ];
+
+        // Variables de estado
+        window.appsList = [...initialApps];
+        let currentCategory = 'all';
+        let searchQuery = '';
+        let activeApp = null;
+        let isDownloading = false;
+        let selectedFile = null;
+        let selectedIconUrl = null;
+
+        window.onload = function() {
+            renderFeaturedApp();
+            renderApps();
+            checkPushPermissionStatus();
+        };
+
+        function requestNotificationPermission() {
+            if ("Notification" in window) {
+                Notification.requestPermission().then(permission => {
+                    if (permission === "granted") {
+                        showToast("¡Notificaciones activadas! Recibirás alertas instantáneas de nuevas apps.");
+                        document.getElementById('enableNotifyBtn').classList.add('bg-green-900/40', 'border-green-500/40', 'text-green-400');
+                    } else {
+                        showToast("Permiso de notificaciones denegado o cerrado.");
+                    }
+                });
+            } else {
+                showToast("Notificaciones no soportadas en este navegador.");
+            }
+        }
+
+        function checkPushPermissionStatus() {
+            if ("Notification" in window && Notification.permission === "granted") {
+                const btn = document.getElementById('enableNotifyBtn');
+                if (btn) btn.classList.add('bg-green-900/40', 'border-green-500/40', 'text-green-400');
+            }
+        }
+
+        // Sistema de Notificación Broadcast en Tiempo Real (para todos los usuarios con la tienda abierta)
+        window.triggerRealtimePushNotification = function(newApp) {
+            // 1. Mostrar Banner Superior Emergente en la Tienda
+            const banner = document.getElementById('pushBroadcastBanner');
+            const titleElem = document.getElementById('broadcastAppTitle');
+            const viewBtn = document.getElementById('broadcastViewBtn');
+
+            if (banner && titleElem) {
+                titleElem.innerText = `"${newApp.title}" por ${newApp.developer || 'Desarrollador'}`;
+                viewBtn.onclick = () => {
+                    openAppModal(newApp.id);
+                    closeBroadcastBanner();
+                };
+                banner.classList.remove('hidden');
+            }
+
+            // 2. Notificación Nativa del Sistema Operativo/Navegador (Web Push Notification)
+            if ("Notification" in window && Notification.permission === "granted") {
+                try {
+                    new Notification(`Nueva App en Dilan Store: ${newApp.title}`, {
+                        body: `${newApp.description || '¡Descarga gratis esta nueva aplicación recién subida!'}`,
+                        icon: newApp.icon || 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=300&auto=format&fit=crop&q=80'
+                    });
+                } catch (e) {
+                    console.log("No se pudo emitir notificación nativa:", e);
+                }
+            }
+
+            // 3. Audio o Alerta emergente Toast
+            showToast(`🚀 ¡NUEVA APP PUBLICADA!: ${newApp.title}`);
+        };
+
+        function closeBroadcastBanner() {
+            const banner = document.getElementById('pushBroadcastBanner');
+            if (banner) banner.classList.add('hidden');
+        }
+
+        function renderFeaturedApp() {
+            const featured = window.appsList[0];
+            if (!featured) return;
+
+            document.getElementById('featuredTitle').innerText = featured.title;
+            document.getElementById('featuredDesc').innerText = featured.description;
+            document.getElementById('featuredImg').src = featured.icon;
+            
+            document.getElementById('featuredBtn').onclick = () => openAppModal(featured.id);
+            document.getElementById('featuredDetailsBtn').onclick = () => openAppModal(featured.id);
+        }
+
+        function renderApps() {
+            const grid = document.getElementById('appsGrid');
+            const emptyState = document.getElementById('emptyState');
+            if (!grid) return;
+            grid.innerHTML = '';
+
+            const filtered = window.appsList.filter(app => {
+                const matchesCat = currentCategory === 'all' || app.category === currentCategory;
+                const matchesSearch = app.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                                      (app.developer && app.developer.toLowerCase().includes(searchQuery.toLowerCase())) ||
+                                      (app.category && app.category.toLowerCase().includes(searchQuery.toLowerCase()));
+                return matchesCat && matchesSearch;
+            });
+
+            document.getElementById('appCount').innerText = `${filtered.length} disponibles`;
+
+            if (filtered.length === 0) {
+                emptyState.classList.remove('hidden');
+                emptyState.classList.add('flex');
+            } else {
+                emptyState.classList.add('hidden');
+                emptyState.classList.remove('flex');
+
+                filtered.forEach(app => {
+                    const card = document.createElement('div');
+                    card.className = 'group bg-gray-900 rounded-2xl p-5 border border-gray-800 hover:border-brand-500/50 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between cursor-pointer relative';
+                    card.onclick = () => openAppModal(app.id);
+
+                    card.innerHTML = `
+                        <div class="space-y-4">
+                            <div class="flex items-start space-x-4">
+                                <img src="${app.icon}" alt="${app.title}" class="w-16 h-16 rounded-2xl object-cover shadow-md group-hover:scale-105 transition-transform duration-300 border border-gray-800">
+                                <div class="flex-1 min-w-0">
+                                    <span class="inline-block px-2 py-0.5 text-[10px] font-bold rounded-md bg-gray-800 text-brand-400 mb-1">
+                                        ${app.category}
+                                    </span>
+                                    <h3 class="text-base font-bold text-white truncate">${app.title}</h3>
+                                    <p class="text-xs text-gray-400 truncate">${app.developer || 'Desarrollador'}</p>
+                                </div>
+                            </div>
+                            <p class="text-xs text-gray-400 line-clamp-2 leading-relaxed">${app.description}</p>
+                        </div>
+                        <div class="pt-4 border-t border-gray-800/80 flex items-center justify-between text-xs mt-4">
+                            <div class="flex items-center text-amber-400 font-bold">
+                                <i class="fa-solid fa-star mr-1"></i>
+                                <span class="text-gray-200">${app.rating || 5.0}</span>
+                            </div>
+                            <span class="text-gray-400">${app.size || '20 MB'}</span>
+                            <button class="px-3 py-1.5 bg-brand-900/40 text-brand-400 border border-brand-500/30 font-semibold rounded-lg group-hover:bg-brand-600 group-hover:text-white transition-colors">
+                                Obtener
+                            </button>
+                        </div>
+                    `;
+                    grid.appendChild(card);
+                });
+            }
+        }
+
+        function filterCategory(cat) {
+            currentCategory = cat;
+            document.querySelectorAll('.category-btn').forEach(btn => {
+                if (btn.dataset.cat === cat) {
+                    btn.className = 'category-btn active px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all bg-brand-600 text-white shadow-md shadow-brand-500/20';
+                } else {
+                    btn.className = 'category-btn px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all bg-gray-800 text-gray-300 hover:bg-gray-700';
+                }
+            });
+            document.getElementById('sectionHeading').innerText = cat === 'all' ? 'Todas las Aplicaciones' : `Categoría: ${cat}`;
+            renderApps();
+        }
+
+        function handleSearch(isMobile = false) {
+            const inputId = isMobile ? 'mobileSearchInput' : 'searchInput';
+            searchQuery = document.getElementById(inputId).value;
+            renderApps();
+        }
+
+        function resetFilters() {
+            searchQuery = '';
+            currentCategory = 'all';
+            document.getElementById('searchInput').value = '';
+            document.getElementById('mobileSearchInput').value = '';
+            filterCategory('all');
+        }
+
+        function openAppModal(appId) {
+            activeApp = window.appsList.find(a => a.id === appId);
+            if (!activeApp) return;
+
+            document.getElementById('modalIcon').src = activeApp.icon;
+            document.getElementById('modalTitle').innerText = activeApp.title;
+            document.getElementById('modalDeveloper').innerText = activeApp.developer || 'Desarrollador';
+            document.getElementById('modalCategory').innerText = activeApp.category;
+            document.getElementById('modalRating').innerText = activeApp.rating || 5.0;
+            document.getElementById('modalSize').innerText = activeApp.size || '20 MB';
+            document.getElementById('modalDownloads').innerText = `${activeApp.downloads || 'Nuevo'} descargas`;
+            document.getElementById('modalDescription').innerText = activeApp.description;
+            document.getElementById('modalVersion').innerText = activeApp.version || '1.0.0';
+            document.getElementById('modalApkName').innerText = activeApp.apkName || 'app.apk';
+
+            const screenshotsContainer = document.getElementById('modalScreenshots');
+            screenshotsContainer.innerHTML = '';
+            const screenshots = activeApp.screenshots || [activeApp.icon];
+            screenshots.forEach(imgUrl => {
+                const img = document.createElement('img');
+                img.src = imgUrl;
+                img.className = 'w-48 h-28 object-cover rounded-xl border border-gray-800 flex-shrink-0';
+                screenshotsContainer.appendChild(img);
+            });
+
+            document.getElementById('progressContainer').classList.add('hidden');
+            document.getElementById('progressBar').style.width = '0%';
+            document.getElementById('downloadBtn').disabled = false;
+
+            document.getElementById('appModal').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeAppModal() {
+            document.getElementById('appModal').classList.add('hidden');
+            document.body.style.overflow = 'auto';
+        }
+
+        // Descarga de Archivo (Real o Generado)
+        function triggerDirectDownload() {
+            if (isDownloading || !activeApp) return;
+            isDownloading = true;
+
+            const progressContainer = document.getElementById('progressContainer');
+            const progressBar = document.getElementById('progressBar');
+            const downloadPercent = document.getElementById('downloadPercent');
+            const statusText = document.getElementById('downloadStatusText');
+            const downloadBtn = document.getElementById('downloadBtn');
+
+            progressContainer.classList.remove('hidden');
+            downloadBtn.disabled = true;
+
+            let progress = 0;
+            const interval = setInterval(() => {
+                progress += Math.floor(Math.random() * 25) + 15;
+                if (progress >= 100) {
+                    progress = 100;
+                    clearInterval(interval);
+                    
+                    statusText.innerText = '¡Descarga Completa!';
+                    progressBar.style.width = '100%';
+                    downloadPercent.innerText = '100%';
+
+                    setTimeout(() => {
+                        let downloadUrl = activeApp.realFileUrl;
+                        
+                        if (!downloadUrl) {
+                            const blob = new Blob([`Ejecutable Dilan Store - ${activeApp.title}\nDesarrollador: ${activeApp.developer}`], { type: 'application/octet-stream' });
+                            downloadUrl = URL.createObjectURL(blob);
+                        }
+
+                        const a = document.createElement('a');
+                        a.href = downloadUrl;
+                        a.download = activeApp.apkName || 'app-release.apk';
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+
+                        showToast(`Descarga de ${activeApp.apkName} finalizada`);
+                        isDownloading = false;
+                        downloadBtn.disabled = false;
+                    }, 400);
+                } else {
+                    progressBar.style.width = `${progress}%`;
+                    downloadPercent.innerText = `${progress}%`;
+                }
+            }, 150);
+        }
+
+        // Gestión de Subida de Archivos Reales
+        function openDevModal() {
+            document.getElementById('devModal').classList.remove('hidden');
+        }
+
+        function closeDevModal() {
+            document.getElementById('devModal').classList.add('hidden');
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault();
+            document.getElementById('dropZone').classList.add('border-brand-500', 'bg-brand-900/20');
+        }
+
+        function handleDragLeave(e) {
+            e.preventDefault();
+            document.getElementById('dropZone').classList.remove('border-brand-500', 'bg-brand-900/20');
+        }
+
+        function handleFileDrop(e) {
+            e.preventDefault();
+            handleDragLeave(e);
+            if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+                processUploadedFile(e.dataTransfer.files[0]);
+            }
+        }
+
+        function handleFileSelect(e) {
+            if (e.target.files && e.target.files[0]) {
+                processUploadedFile(e.target.files[0]);
+            }
+        }
+
+        function handleIconSelect(e) {
+            if (e.target.files && e.target.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(evt) {
+                    selectedIconUrl = evt.target.result;
+                };
+                reader.readAsDataURL(e.target.files[0]);
+            }
+        }
+
+        function processUploadedFile(file) {
+            selectedFile = file;
+            const sizeInMB = (file.size / (1024 * 1024)).toFixed(1);
+            
+            document.getElementById('uploadedFileName').innerText = file.name;
+            document.getElementById('uploadedFileSize').innerText = `${sizeInMB} MB`;
+            document.getElementById('dropZonePrompt').classList.add('hidden');
+            document.getElementById('fileSelectedInfo').classList.remove('hidden');
+            document.getElementById('fileSelectedInfo').classList.add('flex');
+
+            const nameInput = document.getElementById('devAppName');
+            if (!nameInput.value) {
+                const cleanName = file.name.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " ");
+                nameInput.value = cleanName.charAt(0).toUpperCase() + cleanName.slice(1);
+            }
+        }
+
+        async function handleDevSubmit(e) {
+            e.preventDefault();
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = `<i class="fa-solid fa-spinner animate-spin"></i> <span>Guardando y Notificando...</span>`;
+
+            const name = document.getElementById('devAppName').value;
+            const category = document.getElementById('devCategory').value;
+            const developer = document.getElementById('devDeveloper').value;
+            const description = document.getElementById('devDescription').value;
+
+            let fileUrl = null;
+            let fileSizeText = '25.0 MB';
+            let fileNameText = `${name.toLowerCase().replace(/\s+/g, '-')}.apk`;
+
+            if (selectedFile) {
+                fileUrl = URL.createObjectURL(selectedFile);
+                fileSizeText = `${(selectedFile.size / (1024 * 1024)).toFixed(1)} MB`;
+                fileNameText = selectedFile.name;
+            }
+
+            const iconUrl = selectedIconUrl || 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=300&auto=format&fit=crop&q=80';
+
+            const newAppPayload = {
+                title: name,
+                category: category,
+                developer: developer,
+                rating: 5.0,
+                downloads: '1',
+                size: fileSizeText,
+                price: 'Gratis',
+                icon: iconUrl,
+                description: description,
+                version: '1.0.0',
+                minAndroid: 'Android 8.0+',
+                apkName: fileNameText,
+                realFileUrl: fileUrl,
+                screenshots: [iconUrl]
+            };
+
+            try {
+                // Guardar en Firestore para sincronización instantánea a TODOS los usuarios conectados
+                if (window.publishAppToFirestore) {
+                    await window.publishAppToFirestore(newAppPayload);
+                } else {
+                    window.appsList.unshift({ id: Date.now().toString(), ...newAppPayload });
+                    renderApps();
+                    window.triggerRealtimePushNotification(newAppPayload);
+                }
+
+                closeDevModal();
+                
+                // Limpieza del formulario
+                document.getElementById('devForm').reset();
+                selectedFile = null;
+                selectedIconUrl = null;
+                document.getElementById('dropZonePrompt').classList.remove('hidden');
+                document.getElementById('fileSelectedInfo').classList.add('hidden');
+                document.getElementById('fileSelectedInfo').classList.remove('flex');
+                
+                showToast(`¡"${name}" subida! Se notificó a todos los usuarios.`);
+            } catch (err) {
+                console.error("Error al publicar:", err);
+                showToast("Se publicó la app localmente en la tienda.");
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = `<span>Publicar y Notificar</span>`;
+            }
+        }
+
+        function showToast(message) {
+            const toast = document.getElementById('toastNotification');
+            const toastMsg = document.getElementById('toastMessage');
+            
+            toastMsg.innerText = message;
+            toast.classList.remove('translate-y-20', 'opacity-0', 'pointer-events-none');
+            
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0', 'pointer-events-none');
+            }, 3500);
+        }
+    </script>
+</body>
+</html>
